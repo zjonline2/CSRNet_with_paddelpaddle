@@ -97,7 +97,7 @@ def baidu_star_2018(settings,annotation, mode, shuffle):
                if os.path.exists(id_path):
                   gt=np.load(id_path)
                   gt=np.transpose(gt)
-                  yield im, np.array([gt])
+                  yield im, np.sum(np.array(gt))
             else:
                 continue
 
