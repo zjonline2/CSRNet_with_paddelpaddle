@@ -85,14 +85,15 @@ def baidu_star_2018(settings,annotation, mode, shuffle):
         for annotation in annotations:
             image_path = settings.data_dir+'/image/'+annotation['name']
             im = Image.open(image_path)
-            imags.append(im)
+            images.append(im)
             if im.mode == 'L':
                 im = im.convert('RGB')
             im_width, im_height = im.size
-            im = im.astype('float32')
-            gt=np.load(settings.data_dir+'/ground_truth/'+str(annotation['id'])+'.npy')
-            gt=np.transpose(gt)
-            yield im, [gt]
+            id_path=settings.data_dir+'/ground_truth/'+str(annotation['id'])+'.npy'
+            if os.path.exists(id_path):
+               gt=np.load(id_path)
+               gt=np.transpose(gt)
+               yield im, [gt]
 
     return reader
 def train(settings, file_list, shuffle=True):

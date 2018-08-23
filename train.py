@@ -8,6 +8,11 @@ import CSRNet as net
 import paddle
 import paddle.fluid as fluid
 import reader
+import threading
+import glob
+import json
+from scipy.ndimage.filters import gaussian_filter
+from PIL import Image
 from utility import add_arguments, print_arguments
 parser = argparse.ArgumentParser(description=__doc__)
 add_arg = functools.partial(add_arguments, argparser=parser)
@@ -35,6 +40,70 @@ add_arg('data_dir',         str,   './../baidu_star_2018', "data directory")
 add_arg('skip_batch_num',   int,    5,  "the num of minibatch to skip.")
 add_arg('iterations',       int,   120,  "mini batchs.")
 add_arg('with_memory_optimization',   bool,   True,  "with_memory_optimization.")
+
+img_paths =[];
+path='../baidu_star_2018/image/stage2/train/'
+annotations=json.load(open('../baidu_star_2018/annotation/annotation_train_stage2.json'))['annotations']
+id=np.zeros([3000])
+gt=os.listdir('../baidu_star_2018/ground_truth/')
+
+def distance(a,b):
+    if a.has_key('w') and b.has_key('h'):
+       a=[(a['x']+a['w'])*0.5,(a['y']+a['h'])*0.5]
+       b=[(b['x']+b['w'])*0.5,(b['y']+b['h'])*0.5]
+    elif a.has_key('x') and b.has_key('y'):
+       a=[a['x'],a['y']]
+       b=[b['x'],b['y']]
+    return ((a[0]-b[0])**2+(a[1]-b[1])**2)**0.5
+
+for i in gt:
+    id[int(i.replace('.npy',''))]=1
+def process(dy,di):
+    from scipy.ndimage.filters import gaussian_filter
+    return gaussian_filter(dy,di, mode='constant')
+def sum(gt):
+    s=0
+    for x in range(gt.shape[0]):
+        for y in range(gt.shape[1]):
+            s+=gt[x,y]
+    return s
+def gaussian(annotations,id):
+    import json
+    import numpy as np
+    
+    from PIL import Image
+    belta=0.3
+    for annotation in annotations:
+      if not id[int(annotation['id'])]==1:
+        img=Image.open('./image/'+annotation['name']);ps=annotation['annotation'];distances=[[] for j in ps]
+        img=np.array(img);
+        density = np.zeros([img.shape[1],img.shape[0]])
+        for i in range(len(ps)):
+            for j in range(len(ps)):
+                if not i==j:
+                    distances[i].append(distance(ps[i],ps[j]))
+            distances[i].sort()
+            di=np.mean(distances[i][0:3])*belta
+            if ps[i].has_key('w') and ps[i].has_key('h'):
+                       dy= np.zeros([img.shape[1],img.shape[0]])
+                       x=(ps[i]['w']+ps[i]['x'])/2
+                       y=(ps[i]['h']+ps[i]['y'])/2
+                       dy[x][y]=1
+                       density+=process(dy,di)
+            elif ps[i].has_key('x') and ps[i].has_key('y'):
+               while ps[i]['x']>density.shape[1]:
+                     ps[i]['x']-=1
+               dy= np.zeros([img.shape[1],img.shape[0]]);
+               dy[ps[i]['x']][ps[i]['y']]=1
+               density+=process(dy,di)
+        s=sum(density)
+        num=annotation['num']
+        sub=num-s
+        np.save('./ground_truth/'+str(annotation['id'])+'.npy',density)
+        id[annotation['id']]=1
+        if abs(sub)>1:
+           print str(num)+' '+str(s)+' '+str(sub)+' '+str(annotation['id'])
+
 def train(args,
           data_args,
           train_file_list,
@@ -152,13 +221,10 @@ if __name__ == '__main__':
         apply_distort=args.apply_distort,
         apply_expand=args.apply_expand,
         ap_version = args.ap_version)
-    train(
-        args,
-        data_args=data_args,
-        train_file_list=train_file_list,
-        learning_rate=args.learning_rate,
-        batch_size=args.batch_size,
-        num_passes=args.num_passes,
-        model_save_dir=model_save_dir,
-        pretrained_model=args.pretrained_model,
-        with_memory_optimization=args.with_memory_optimization)
+    threads=[]
+    t1=threading.Thread(target=train,args=(args,data_args,train_file_list,args.learning_rate,args.batch_size,args.num_passes,model_save_dir,args.pretrained_model,args.with_memory_optimization))  
+    t2=threading.Thread(target=gaussian,args=(annotations,id))
+    t2.setDaemon(True)
+    t2.start()
+    t1.start()
+    t1.join()
