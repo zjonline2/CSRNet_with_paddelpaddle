@@ -75,7 +75,7 @@ def gaussian(annotations,id):
     belta=0.3
     for annotation in annotations:
       if not id[int(annotation['id'])]==1:
-        img=Image.open('./image/'+annotation['name']);ps=annotation['annotation'];distances=[[] for j in ps]
+        img=Image.open('../baidu_star_2018/image/'+annotation['name']);ps=annotation['annotation'];distances=[[] for j in ps]
         img=np.array(img);
         density = np.zeros([img.shape[1],img.shape[0]])
         for i in range(len(ps)):
@@ -99,7 +99,7 @@ def gaussian(annotations,id):
         s=sum(density)
         num=annotation['num']
         sub=num-s
-        np.save('./ground_truth/'+str(annotation['id'])+'.npy',density)
+        np.save('../baidu_star_2018/ground_truth/'+str(annotation['id'])+'.npy',density)
         id[annotation['id']]=1
         if abs(sub)>1:
            print (str(num)+' '+str(s)+' '+str(sub)+' '+str(annotation['id']))
@@ -164,12 +164,13 @@ def train(args,
         iter = 0
         pass_duration = 0.0
         for batch_id, data in enumerate(train_reader()):
-            size=data[0][0].size
+            print data[0][1]
+            print np.array(data[0][1])
             prev_start_time = start_time
             start_time = time.time()
             if args.for_model_ce and iter == args.iterations:
                 break
-            if len(data) < (devices_num * 2):
+            if len(data) < (devices_num):
                 print("There are too few data to train on all devices.")
                 continue
             if args.parallel:
