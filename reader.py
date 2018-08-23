@@ -89,11 +89,14 @@ def baidu_star_2018(settings,annotation, mode, shuffle):
             if im.mode == 'L':
                 im = im.convert('RGB')
             im_width, im_height = im.size
-            id_path=settings.data_dir+'/ground_truth/'+str(annotation['id'])+'.npy'
-            if os.path.exists(id_path):
-               gt=np.load(id_path)
-               gt=np.transpose(gt)
-               yield np.array(im).astype('float32'), [gt]
+            if im_width==1920 and im_height==1080:
+               id_path=settings.data_dir+'/ground_truth/'+str(annotation['id'])+'.npy'
+               if os.path.exists(id_path):
+                  gt=np.load(id_path)
+                  gt=np.transpose(gt)
+                  yield im, [gt]
+            else:
+                continue
 
     return reader
 def train(settings, file_list, shuffle=True):
