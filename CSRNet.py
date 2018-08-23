@@ -13,8 +13,8 @@ def back_end(vgg):
                 num_filters=num_filter[i],
                 filter_size=3,
                 stride=1,
-                padding=2,
-                act='relu',dilation=2,
+                padding=1,
+                act='relu',dilation=1,
                 param_attr=fluid.param_attr.ParamAttr(
                     initializer=fluid.initializer.Normal(scale=0.01)),
                 bias_attr=fluid.param_attr.ParamAttr(
