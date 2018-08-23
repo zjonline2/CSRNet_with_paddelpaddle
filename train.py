@@ -102,7 +102,7 @@ def gaussian(annotations,id):
         np.save('./ground_truth/'+str(annotation['id'])+'.npy',density)
         id[annotation['id']]=1
         if abs(sub)>1:
-           print str(num)+' '+str(s)+' '+str(sub)+' '+str(annotation['id'])
+           print (str(num)+' '+str(s)+' '+str(sub)+' '+str(annotation['id']))
 
 def train(args,
           data_args,
