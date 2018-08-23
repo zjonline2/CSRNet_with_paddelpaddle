@@ -150,7 +150,7 @@ def train(args,
         model_path = os.path.join(model_save_dir, postfix)
         if os.path.isdir(model_path):
             shutil.rmtree(model_path)
-        print 'save models to %s' % (model_path)
+        print ('save models to %s' % (model_path))
         fluid.io.save_persistables(exe, model_path)
 
     best_map = 0.
