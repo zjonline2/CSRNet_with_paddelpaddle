@@ -21,7 +21,6 @@ def back_end(vgg):
                     initializer=fluid.initializer.Constant(value=0.0)))
     return conv
 def CSRNet(input,size):
-    input=fluid.layers.reshape(input,[-1,3,size[1],size[0]])
     vgg_13=vgg.VGG13(input)
     conv=fluid.layers.conv2d(
                 input=back_end(vgg_13),
