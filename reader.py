@@ -84,20 +84,25 @@ def baidu_star_2018(settings,annotation, mode, shuffle):
             random.shuffle(annotations)
         for annotation in annotations:
             image_path = settings.data_dir+'/image/'+annotation['name']
-            im = Image.open(image_path)
+            im = Image.open(image_path);imgs=[]
             images.append(im)
             if im.mode == 'L':
                 im = im.convert('RGB')
             im_width, im_height = im.size
             if im_width==1920 and im_height==1080:
                id_path=settings.data_dir+'/ground_truth/'+str(annotation['id'])+'.npy';
-               im=np.array(im)
-               if len(im.shape) == 3:
-                  im = np.swapaxes(im, 0, 2)
+               imgs.append(im.crop([0,0,im_width/2,im_height/2]))
+               imgs.append(im.crop([im_width,0,im_width,im_height/2]))
+               imgs.append(im.crop([0,im_height/2,im_width/2,im_height]))
+               imgs.append(im.crop([im_width/2,im_height/2,im_width,im_height]))
+               for im in imgs:
+                  if len(im.shape) == 3:
+                     im = np.swapaxes(im, 0, 2)
                if os.path.exists(id_path):
                   gt=np.load(id_path)
                   gt=np.transpose(gt)
-                  yield im, [gt]
+                  
+                  yield imgs, [gt]
             else:
                 continue
 
